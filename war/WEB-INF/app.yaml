@@ -4,4 +4,4 @@ runtime: java
 
 handlers:
 - url: /
-  servlet: pillage_rss.home
+  servlet: pillage.core
