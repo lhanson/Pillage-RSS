@@ -1,0 +1,7 @@
+application: pillage-rss
+version: 1
+runtime: java
+
+handlers:
+- url: /
+  servlet: pillage_rss.home

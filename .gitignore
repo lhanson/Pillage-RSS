@@ -1,0 +1,6 @@
+*jar
+war/WEB-INF/lib
+war/WEB-INF/classes
+war/WEB-INF/web.xml
+war/WEB-INF/appengine-web.xml
+appengine-generated
