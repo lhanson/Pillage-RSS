@@ -1,11 +1,12 @@
 (ns pillage.core
   (:gen-class :extends javax.servlet.http.HttpServlet)
-  (:use compojure.core
+  (:use pillage.handlers
+        compojure.core
         ring.util.servlet)
   (:require [compojure.route :as route]))
 
 (defroutes pillage-rss
-  (GET "/" [] "<h1>Hello World</h1>")
+  (GET "/" [] (home))
   (route/not-found "<h1>Page not found</h1>"))
 
 (defservice pillage-rss)
