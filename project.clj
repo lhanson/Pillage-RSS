@@ -4,7 +4,8 @@
   :dependencies [[org.clojure/clojure "1.2.0"]
                  [org.clojure/clojure-contrib "1.2.0"]
                  [compojure "0.5.2"]
-                 [hiccup "0.3.0"]]
+                 [hiccup "0.3.0"]
+                 [appengine "0.4-SNAPSHOT"]]
   :aot [pillage.core]
   :compile-path "war/WEB-INF/classes"
   :library-path "war/WEB-INF/lib")
