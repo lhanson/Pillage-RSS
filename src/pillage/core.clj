@@ -6,7 +6,7 @@
   (:require [compojure.route :as route]))
 
 (defroutes pillage-rss
-  (GET "/" [] (home))
+  (GET "/" {uri :uri} (home uri))
   (route/not-found "<h1>Page not found</h1>"))
 
 (defservice pillage-rss)

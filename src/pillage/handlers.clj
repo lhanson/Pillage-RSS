@@ -1,8 +1,9 @@
 (ns pillage.handlers
   (:use pillage.views)
-  (:use [appengine.users :only (current-user)]))
+  (:use [appengine.users :only (current-user login-url logout-url)]))
 
-(defn home []
+(defn home [uri]
   "Default request handler"
-  (println "User: " (current-user))
-  (html-doc))
+  (if (nil? (current-user))
+    (need-to-login (login-url uri))
+    (logged-in (:nickname (current-user)) (logout-url uri))))

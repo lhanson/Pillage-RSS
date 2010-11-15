@@ -2,20 +2,25 @@
   (:use hiccup.core
         hiccup.page-helpers))
 
-(def html-header
+(def default-title "Pillage RSS")
+
+(def banner
   '([:h1 "Pillage!"
-    [:img {:src "/images/rss-symbol.jpg"}]]))
+    [:a {:href "/"} [:img {:src "/images/rss-symbol.jpg"}]]]))
 
-(def body-unauthenticated
-  '([:h1 "Log in, bro."]))
+(defn- default-body-unauthenticated [login-url]
+  `([:h1 "Hi there!"]
+    [:p [:a {:href ~login-url} "Log in"] " using your Google account."]))
 
-(def body
-  '([:p "You're logged in, bro."]))
+(defn- default-body [username logout-url]
+  `([:p "You're logged in, " ~username "."]
+    [:p [:a {:href ~logout-url} "Log out"]]))
 
 (defn html-doc
   "Base template for generating an HTML document"
-  ([] (html-doc "Pillage RSS" {:banner html-header :content body} ))
-  ([title & [{banner :banner content :content} body]]
+  ([] (html-doc default-title {:content default-body-unauthenticated} ))
+  ([body] (html-doc default-title body))
+  ([title & [{content :content} body]]
     (html
       (doctype :xhtml-strict)
       (xhtml-tag "en"
@@ -35,3 +40,8 @@
             [:div#footer ]]]))))
             ;[:div#footer [:h1 "Footer"]]]]))))
 
+(defn need-to-login [login-url]
+  (html-doc {:content (default-body-unauthenticated login-url)}))
+
+(defn logged-in [username logout-url]
+  (html-doc {:content (default-body username logout-url)}))
