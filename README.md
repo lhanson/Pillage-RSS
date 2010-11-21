@@ -22,10 +22,13 @@ How
 ---
 Pillage is written in [Clojure](http://clojure.org/) using the
 [Compojure](https://github.com/weavejester/compojure/wiki) web framework and
-[Hiccup](https://github.com/weavejester/hiccup) for markup generation.
+[Hiccup](https://github.com/weavejester/hiccup) for markup generation. It runs
+on [Google App Engine](http://code.google.com/appengine/) using the
+[appengine-clj](https://github.com/r0man/appengine-clj) Clojure library.
 
 Clojure because I'm currently learning (and loving) it, Compojure because it's
 pretty minimal (basically a wrapper around Ring with a nice routing syntax),
+appengine-clj for nice Clojure bindings to the App Engine Java API,
 and hiccup because I wanted to experiment with generating HTML entirely in code
 (which much is nicer in a homoiconic language like Clojure than, say, Java)
 and get away from ugly templates for a bit. We'll see how that shakes out...
