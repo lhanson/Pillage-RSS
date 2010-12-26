@@ -5,9 +5,14 @@
                  [org.clojure/clojure-contrib "1.2.0"]
                  [compojure "0.5.2"]
                  [hiccup "0.3.0"]
-                 [appengine "0.4.1-SNAPSHOT"]]
-  :dev-dependencies [[com.google.appengine/appengine-testing "1.3.8"] 
-                     [com.google.appengine/appengine-api-stubs "1.3.8"]]
+                 [appengine "0.4.3-SNAPSHOT"]
+                 [rome "0.9"]
+                 ; Including xerces JAR to sidestep "JDOM could not create a SAX parser"
+                 ; issue per http://code.google.com/p/googleappengine/issues/detail?id=1367
+                 [org.bluestemsoftware.open.maven.tparty/xerces-impl "2.9.0"]]
+  :dev-dependencies [[com.google.appengine/appengine-api-labs "1.3.8"]
+                     [com.google.appengine/appengine-api-stubs "1.3.8"]
+                     [com.google.appengine/appengine-testing "1.3.8"]]
   :aot [pillage.core]
   :compile-path "war/WEB-INF/classes"
   :library-path "war/WEB-INF/lib")

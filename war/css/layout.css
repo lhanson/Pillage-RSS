@@ -42,7 +42,7 @@ margin-right: auto;
 
 /* ----------banner for logo-------------- */
 #banner {
-text-align: right;
+text-align: center;
 background-color: #e1ddd9;
 padding: 0px;
 margin: 0px; }
@@ -51,20 +51,20 @@ margin: 0px; }
 
 /* ----------outer and inner----------------- */
 #outer{ 
-border-left: solid 200px #EBD3E0;  /* color of the left column  */ 
+/*border-left: solid 200px #EBD3E0;*/  /* color of the left column  */ 
 background-color: #ffffff; /* color of the content column */
  } 
 
 #inner{ margin:0px; width:100%; } /* The ie/pc pecularity */ 
 
 /* --------------left navi------------- */
-#left {
+/*#left {
  width:200px; 
  float:left; 
  position:relative; 
  margin-left:-200px; 
  margin-right:1px;
- }
+ }*/
 
 /* -----------------content--------------------- */
 #content{ 
