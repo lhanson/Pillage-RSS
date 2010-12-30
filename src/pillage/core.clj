@@ -7,8 +7,12 @@
 
 (defroutes pillage-rss
   (GET "/" {uri :uri} (handlers/home uri))
-  (POST "/feeds" {uri :uri params :params} (handlers/add-feed uri (params "feed_url")))
+
+  (POST "/feeds" {uri :uri {feed_url "feed_url"} :params} (handlers/add-feed uri feed_url))
+
+  (GET ["/feeds/:id"] {{id "id"} :params :as request} (handlers/get-feed (:uri request) id))
   (DELETE ["/feeds/:id"] [id] (handlers/delete-feed id))
+
   (route/not-found "<h1>Page not found</h1>"))
 
 (defservice pillage-rss)

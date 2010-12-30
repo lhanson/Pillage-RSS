@@ -40,6 +40,16 @@
       ~(map printfeed feeds)
       ~(map display-feed feeds)]))
 
+(defn- edit-body [username logout-url feeds]
+  `([:p "You're logged in, " ~username "."]
+    [:p [:a {:href ~logout-url} "Log out"]]
+    [:div
+      [:h1 "Edit Feed - TODO: Feed title"]
+      ; TODO: this will be the edit form
+      ~(form-to [:post "/feeds"]
+        (text-field "feed_url")
+        (submit-button "Update"))]))
+
 (defn html-doc
   "Base template for generating an HTML document"
   ([] (html-doc default-title {:content default-body-unauthenticated} ))
@@ -66,6 +76,8 @@
 (defn need-to-login [login-url]
   (html-doc {:content (default-body-unauthenticated login-url)}))
 
-(defn home
-  ([username logout-url feeds]
-    (html-doc {:content (default-body username logout-url feeds)})))
+(defn home [username logout-url feeds]
+  (html-doc {:content (default-body username logout-url feeds)}))
+
+(defn edit [username logout-url feeds]
+  (html-doc {:content (edit-body username logout-url feeds)}))

@@ -29,6 +29,16 @@
                           :feed-name (. syndfeed getTitle)}))
       (redirect "/"))))
 
+(defn get-feed [uri id]
+  "Depending on parameters or content negotiation, returns either the edit page
+   for the feed or the filtered RSS feed itself"
+  (println "GET FEED with uri " uri " and ID " id)
+  ; TODO: dispatch between different desired views (edit page vs. the RSS itself)
+  ;       and only require login if we're editing
+  (if (nil? (current-user))
+    (views/need-to-login (login-url uri))
+    (views/edit (:nickname (current-user)) (logout-url uri) (find-feeds))))
+
 (defn delete-feed [id]
   "Deletes the specified feed"
   (if (current-user)

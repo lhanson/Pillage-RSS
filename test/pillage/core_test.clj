@@ -71,6 +71,8 @@
       (assert-status 404 (request "/feeds/nonexistent" :method :get))
       (assert-redirects-to-root (request "/feeds" :method :post :params {"feed_url" "http://bogus.url"}))
       (let [id (.getId (:key (first (find-feeds))))]
+        (println "Trying to get the feed ID " id)
+        (assert-status 200 (request (str "/feeds/" id)))
         ; TODO: assert that the response body contains the newly-added key ID
         ))))
 
