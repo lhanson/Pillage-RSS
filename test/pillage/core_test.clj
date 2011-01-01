@@ -1,13 +1,16 @@
 (ns pillage.core-test
   (:use pillage.core :reload
         pillage.models
-     [pillage.handlers :only (get-syndfeed)]
+        [pillage.handlers :only (get-syndfeed)]
         clojure.test
         clojure.contrib.mock.test-adapter
         appengine.test
         appengine.users
-        appengine.datastore)
+        appengine.datastore.keys
+        appengine.datastore.protocols
+        appengine.datastore.query)
   (import
+        com.google.appengine.api.users.dev.LocalUserService
         com.google.appengine.tools.development.testing.LocalServiceTestHelper
         com.google.appengine.tools.development.testing.LocalDatastoreServiceTestConfig
         com.sun.syndication.feed.synd.SyndFeed))
@@ -36,17 +39,26 @@
     (assert-status 302 response)
     (is (= "/" (get (:headers response) "Location")))))
 
+(def localServiceTestHelper
+  (LocalServiceTestHelper. (into-array [(LocalDatastoreServiceTestConfig.)])))
+
 (defmacro with-local-user-and-data [& body]
   "Sets up a mock user for the local test environment"
-  `(try (.setUp (doto (LocalServiceTestHelper. (into-array [(LocalDatastoreServiceTestConfig.)]))
+  `(try (.setUp (doto localServiceTestHelper
                   (.setEnvAuthDomain "mockAuthDomain")
                   (.setEnvIsLoggedIn true)
                   (.setEnvIsAdmin true)
                   (.setEnvEmail "mock_email@foo.com")))
+     (assert-logged-in)
+     ~@body))
+
+(defmacro switch-users [username & body]
+  "Switches the logged-in user for the local test environment"
+  `(try (. localServiceTestHelper (setEnvEmail ~username))
      ~@body))
 
 (def mockFeedEntity
-  (feed {:user-id (:nickname "mock_user")
+  (feed {:user-id "mock_user"
          :original-url "http://mock/feed/url"
          :pillaged-feed "http://pillage.appspot.com/feeds/mock_feed_url"
          :feed-name "Mock RSS Feed"}))
@@ -63,18 +75,33 @@
   (save-entity mockFeedEntity)
   (is (= 1 (count (find-feeds)))))
 
+(datastore-test test-query
+  (save-entity mockFeedEntity)
+  (save-entity (feed {:user-id "bogus user"
+                      :original-url "original url"
+                      :pillaged-feed "pillaged feed"
+                      :feed-name "feed name"}))
+  (is (= 2 (count (execute (query "feed"))))
+      "Should have stored two feeds total")
+  (is (= 1
+         (count (execute (filter-by (query "feed") = :user-id (:user-id mockFeedEntity)))))
+      "Should have found one test for mock user"))
+
+(deftest get-nonexistent-feed
+  "Exercises the get-feed handler, making sure nonexistent feeds return 404"
+  (with-local-user-and-data
+    (expect [get-syndfeed (returns mockSyndFeed)] ; Mock out the SyndFeed
+      (assert-status 404 (request "/feeds/nonexistent" :method :get)))))
+
 (deftest add-feed
   (with-local-user-and-data
-    (assert-logged-in)
     (is (= 0 (count (find-feeds))))
     (expect [get-syndfeed (returns mockSyndFeed)] ; Mock out the SyndFeed
-      (assert-status 404 (request "/feeds/nonexistent" :method :get))
       (assert-redirects-to-root (request "/feeds" :method :post :params {"feed_url" "http://bogus.url"}))
       (let [id (.getId (:key (first (find-feeds))))]
-        (println "Trying to get the feed ID " id)
         (assert-status 200 (request (str "/feeds/" id)))
-        ; TODO: assert that the response body contains the newly-added key ID
-        ))))
+        (switch-users "second_user@email.com"
+          (assert-status 404 (request (str "/feeds/" id))))))))
 
 (user-test add-feed-anauthenticated
   "Any unauthenticated request should redirect to the login page"
@@ -85,7 +112,6 @@
 
 (user-test delete-feed
   (with-local-user-and-data
-    (assert-logged-in)
     (save-entity mockFeedEntity)
     (let [id (.getId (:key (first (find-feeds))))]
       (is false "Not yet implemented")
@@ -95,5 +121,10 @@
 
 (user-test delete-feed-unauthenticated
   "Double check that all unauthenticated requests are redirected to the login page"
-  (assert-not-logged-in)
-  (assert-redirects-to-root (request "/feeds/1" :method :delete)))
+  (with-local-datastore
+    (assert-not-logged-in)
+    (save-entity mockFeedEntity)
+    (let [id (.getId (:key (first (find-feeds))))]
+      (assert-redirects-to-root (request (str "/feeds/" id) :method :delete))
+      (is (= 1 (count (find-feeds))) "Unauthenticated user should not be able to delete feeds"))))
+
