@@ -34,7 +34,7 @@
   (is (nil? (current-user)) "Test relies on no user signed in"))
 
 (defn- assert-redirects-to-root [response]
-  "Verifies that the given Ring response is a redirect to the login page"
+  "Verifies that the given Ring response is a redirect to the root page"
   (and
     (assert-status 302 response)
     (is (= "/" (get (:headers response) "Location")))))
@@ -42,13 +42,15 @@
 (def localServiceTestHelper
   (LocalServiceTestHelper. (into-array [(LocalDatastoreServiceTestConfig.)])))
 
+(def mockUserName "mock_user@foo.com")
+
 (defmacro with-local-user-and-data [& body]
   "Sets up a mock user for the local test environment"
   `(try (.setUp (doto localServiceTestHelper
                   (.setEnvAuthDomain "mockAuthDomain")
                   (.setEnvIsLoggedIn true)
                   (.setEnvIsAdmin true)
-                  (.setEnvEmail "mock_email@foo.com")))
+                  (.setEnvEmail mockUserName)))
      (assert-logged-in)
      ~@body))
 
@@ -58,7 +60,7 @@
      ~@body))
 
 (def mockFeedEntity
-  (feed {:user-id "mock_user"
+  (feed {:user-id mockUserName
          :original-url "http://mock/feed/url"
          :pillaged-feed "http://pillage.appspot.com/feeds/mock_feed_url"
          :feed-name "Mock RSS Feed"}))
@@ -104,7 +106,7 @@
           (assert-status 404 (request (str "/feeds/" id))))))))
 
 (user-test add-feed-anauthenticated
-  "Any unauthenticated request should redirect to the login page"
+  "Any unauthenticated request should be shown the login page"
   (assert-not-logged-in)
   (let [response (request "/feeds" :method :post :params {"feed_url" "http://bogus.url"})]
     (and (assert-status 200 response)
@@ -114,17 +116,16 @@
   (with-local-user-and-data
     (save-entity mockFeedEntity)
     (let [id (.getId (:key (first (find-feeds))))]
-      (is false "Not yet implemented")
-      ;(println "Stored key " id)
-      ;TODO: call DELETE twice on this ID and assert that we get the expected results
-      )))
+      (assert-redirects-to-root (request (str "/feeds/" id) :method :delete))
+      (is (= 0 (count (find-feeds))))
+      (assert-status 404 (request (str "/feeds/" id) :method :delete)))))
 
 (user-test delete-feed-unauthenticated
-  "Double check that all unauthenticated requests are redirected to the login page"
+  "Double check that all unauthenticated requests are shown the login page"
   (with-local-datastore
     (assert-not-logged-in)
     (save-entity mockFeedEntity)
     (let [id (.getId (:key (first (find-feeds))))]
-      (assert-redirects-to-root (request (str "/feeds/" id) :method :delete))
+      (assert-status 200(request (str "/feeds/" id) :method :delete))
       (is (= 1 (count (find-feeds))) "Unauthenticated user should not be able to delete feeds"))))
 

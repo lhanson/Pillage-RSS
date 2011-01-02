@@ -1,7 +1,7 @@
 (ns pillage.handlers
   (:require [pillage.views :as views])
   (:use pillage.models
-        [appengine.datastore :only (save-entity select string->key)]
+        [appengine.datastore :only (save-entity delete-entity select string->key)]
         [appengine.datastore.keys :only (make-key)]
         [appengine.datastore.protocols :only (execute)]
         [appengine.datastore.query :only (filter-by query)]
@@ -24,6 +24,14 @@
         feed))
     (catch Exception e
       (println "Error loading feed " feed-id " for user " userid ": " e))))
+
+(defn- delete-feed- [userid id]
+  "Removes the user's feed specified by id.
+
+   Returns whether the feed was found and deleted."
+  (if-let [feed (load-feed userid id)]
+    (delete-entity feed))
+  )
 
 (defn home [uri]
   "Default request handler"
@@ -58,10 +66,9 @@
       (if-let [feed (load-feed nickname id)]
         (views/edit nickname (logout-url uri) nickname)))))
 
-(defn delete-feed [id]
+(defn delete-feed [uri id]
   "Deletes the specified feed"
-  (if (current-user)
-    (do
-      (println "Deleting feed " (select "feed" (string->key id)))))
-  ; TODO: handle the not-logged-in case more gracefully
-  (redirect "/"))
+  (if (nil? (current-user))
+    (views/need-to-login (login-url uri))
+    (if (delete-feed- (:nickname (current-user)) id)
+      (redirect "/"))))

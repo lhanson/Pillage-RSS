@@ -11,7 +11,7 @@
   (POST "/feeds" {uri :uri {feed_url "feed_url"} :params} (handlers/add-feed uri feed_url))
 
   (GET ["/feeds/:id"] {{id "id"} :params :as request} (handlers/get-feed (:uri request) id))
-  (DELETE ["/feeds/:id"] [id] (handlers/delete-feed id))
+  (DELETE ["/feeds/:id"] {{id "id"} :params :as request} (handlers/delete-feed (:uri request) id))
 
   (route/not-found "<h1>Page not found</h1>"))
 
