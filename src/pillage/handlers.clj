@@ -2,7 +2,6 @@
   (:require [pillage.views :as views])
   (:use pillage.models
         [appengine.datastore :only (save-entity delete-entity select string->key)]
-        [appengine.datastore.keys :only (make-key)]
         [appengine.datastore.protocols :only (execute)]
         [appengine.datastore.query :only (filter-by query)]
         [appengine.datastore.service :only (get-entity)]
@@ -19,7 +18,7 @@
 (defn- load-feed [userid feed-id]
   "Returns the user's specified feed"
   (try
-    (if-let [feed (get-entity (make-key "feed" (Integer/parseInt feed-id)))]
+    (if-let [feed (get-entity (string->key feed-id))]
       (if (= userid (get (.getProperties feed) "user-id"))
         feed))
     (catch Exception e

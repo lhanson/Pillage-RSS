@@ -100,7 +100,7 @@
     (is (= 0 (count (find-feeds))))
     (expect [get-syndfeed (returns mockSyndFeed)] ; Mock out the SyndFeed
       (assert-redirects-to-root (request "/feeds" :method :post :params {"feed_url" "http://bogus.url"}))
-      (let [id (.getId (:key (first (find-feeds))))]
+      (let [id (key->string (:key (first (find-feeds))))]
         (assert-status 200 (request (str "/feeds/" id)))
         (switch-users "second_user@email.com"
           (assert-status 404 (request (str "/feeds/" id))))))))
@@ -115,7 +115,7 @@
 (user-test delete-feed
   (with-local-user-and-data
     (save-entity mockFeedEntity)
-    (let [id (.getId (:key (first (find-feeds))))]
+    (let [id (key->string (:key (first (find-feeds))))]
       (assert-redirects-to-root (request (str "/feeds/" id) :method :delete))
       (is (= 0 (count (find-feeds))))
       (assert-status 404 (request (str "/feeds/" id) :method :delete)))))
@@ -125,7 +125,7 @@
   (with-local-datastore
     (assert-not-logged-in)
     (save-entity mockFeedEntity)
-    (let [id (.getId (:key (first (find-feeds))))]
-      (assert-status 200(request (str "/feeds/" id) :method :delete))
+    (let [id (key->string (:key (first (find-feeds))))]
+      (assert-status 200 (request (str "/feeds/" id) :method :delete))
       (is (= 1 (count (find-feeds))) "Unauthenticated user should not be able to delete feeds"))))
 
