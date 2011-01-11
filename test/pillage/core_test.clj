@@ -1,7 +1,7 @@
 (ns pillage.core-test
   (:use pillage.core :reload
         pillage.models
-        [pillage.handlers :only (get-syndfeed)]
+        [pillage.feed-handling :only (get-syndfeed)]
         clojure.test
         clojure.contrib.mock.test-adapter
         appengine.test

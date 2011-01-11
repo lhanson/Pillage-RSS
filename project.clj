@@ -12,7 +12,10 @@
                  [org.bluestemsoftware.open.maven.tparty/xerces-impl "2.9.0"]]
   :dev-dependencies [[com.google.appengine/appengine-api-labs "1.3.8"]
                      [com.google.appengine/appengine-api-stubs "1.3.8"]
-                     [com.google.appengine/appengine-testing "1.3.8"]]
+                     [com.google.appengine/appengine-testing "1.3.8"]
+                     [rome "0.9"]
+                     [appengine "0.4.3-SNAPSHOT"]]
   :aot [pillage.core]
   :compile-path "war/WEB-INF/classes"
   :library-path "war/WEB-INF/lib")
+

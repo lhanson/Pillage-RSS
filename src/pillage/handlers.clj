@@ -1,15 +1,13 @@
 (ns pillage.handlers
   (:require [pillage.views :as views])
   (:use pillage.models
+        [pillage.feed-handling :only (get-syndfeed)]
         [appengine.datastore :only (save-entity delete-entity select string->key)]
         [appengine.datastore.protocols :only (execute)]
         [appengine.datastore.query :only (filter-by query)]
         [appengine.datastore.service :only (get-entity)]
         [appengine.users :only (current-user login-url logout-url)]
-        [ring.util.response :only (redirect)])
-  (:import
-        (java.net URL)
-        (com.sun.syndication.io SyndFeedInput XmlReader)))
+        [ring.util.response :only (redirect)]))
 
 (defn- load-feeds [userid]
   "Returns the stored feeds for the given user"
@@ -38,10 +36,6 @@
     (views/need-to-login (login-url uri))
     (let [nickname (:nickname (current-user))]
       (views/home nickname (logout-url uri) (load-feeds nickname)))))
-
-(defn get-syndfeed [url]
-  "Returns a com.sun.syndication.io.SyndFeed for the given URL"
-  (. (SyndFeedInput.) build (XmlReader. (URL. url))))
 
 (defn add-feed [uri feed-url]
   "Adds a feed for the current user"
