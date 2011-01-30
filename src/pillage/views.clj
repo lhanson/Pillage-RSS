@@ -21,12 +21,12 @@
                       original-url :original-url}]
   [:p
     [:a {:href pillaged-url} feed-name] "|"
-    [:a {:href "/feeds/"} "edit"] "|"
+    [:a {:href (str "/feeds/" (key->string id))} "edit"] "|"
     (form-to [:delete (str "/feeds/" (key->string id))] (submit-button "delete"))
     [:a {:href original-url} "original"]])
 
-(defn- printfeed [feed]
-  (println "Feed key: " (key->string (:key feed)) ", title: " (:feed-name feed) ", user id: " (:user-id feed)))
+(defn- printfeed [{:keys [key, feed-name, user-id]}]
+  (println "Feed key:" (key->string key) ", title:" feed-name ", user id:" user-id))
 
 (defn- default-body [username logout-url feeds]
   `([:p "You're logged in, " ~username "."]
@@ -40,11 +40,11 @@
       ~(map printfeed feeds)
       ~(map display-feed feeds)]))
 
-(defn- edit-body [username logout-url feeds]
+(defn- edit-body [username logout-url {:keys [key, feed-name, user-id]}]
   `([:p "You're logged in, " ~username "."]
     [:p [:a {:href ~logout-url} "Log out"]]
     [:div
-      [:h1 "Edit Feed - TODO: Feed title"]
+      [:h1 "Edit Feed - " ~feed-name]
       ; TODO: this will be the edit form
       ~(form-to [:post "/feeds"]
         (text-field "feed_url")
@@ -79,5 +79,6 @@
 (defn home [username logout-url feeds]
   (html-doc {:content (default-body username logout-url feeds)}))
 
-(defn edit [username logout-url feeds]
-  (html-doc {:content (edit-body username logout-url feeds)}))
+(defn edit [username logout-url feed]
+  (let [{:keys [feed-name]} feed]
+    (html-doc {:content (edit-body username logout-url feed)})))

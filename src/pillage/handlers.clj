@@ -2,7 +2,7 @@
   (:require [pillage.views :as views])
   (:use pillage.models
         [pillage.feed-handling :only (get-syndfeed)]
-        [appengine.datastore :only (save-entity delete-entity select string->key)]
+        [appengine.datastore :only (save-entity delete-entity select string->key deserialize-entity)]
         [appengine.datastore.protocols :only (execute)]
         [appengine.datastore.query :only (filter-by query)]
         [appengine.datastore.service :only (get-entity)]
@@ -18,9 +18,9 @@
   (try
     (if-let [feed (get-entity (string->key feed-id))]
       (if (= userid (get (.getProperties feed) "user-id"))
-        feed))
+        (deserialize-entity feed)))
     (catch Exception e
-      (println "Error loading feed " feed-id " for user " userid ": " e))))
+      (println "Error loading feed" feed-id "for user" userid ": " e))))
 
 (defn- delete-feed- [userid id]
   "Removes the user's feed specified by id.
@@ -57,7 +57,7 @@
     (views/need-to-login (login-url uri))
     (let [nickname (:nickname (current-user))]
       (if-let [feed (load-feed nickname id)]
-        (views/edit nickname (logout-url uri) nickname)))))
+        (views/edit nickname (logout-url uri) feed)))))
 
 (defn delete-feed [uri id]
   "Deletes the specified feed"
