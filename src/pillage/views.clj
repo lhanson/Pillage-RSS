@@ -40,15 +40,27 @@
       ~(map printfeed feeds)
       ~(map display-feed feeds)]))
 
-(defn- edit-body [username logout-url {:keys [key, feed-name, user-id]}]
-  `([:p "You're logged in, " ~username "."]
-    [:p [:a {:href ~logout-url} "Log out"]]
-    [:div
-      [:h1 "Edit Feed - " ~feed-name]
-      ; TODO: this will be the edit form
-      ~(form-to [:post "/feeds"]
-        (text-field "feed_url")
-        (submit-button "Update"))]))
+(defn- edit-body [username logout-url feed]
+  (println "Editing feed" feed)
+  (let [{:keys [feed-name original-url]} feed]
+    `([:p "You're logged in, " ~username "."]
+      [:p [:a {:href logout-url} "Log out"]]
+      [:div
+        [:h1 "Edit Feed - " ~feed-name]
+        [:p "Source feed: "
+          [:a {:href original-url} ~original-url]]
+        ~(form-to [:post "/feeds"]
+          [:p "Feed name " (text-field "name" feed-name)]
+          [:h2 "Strip entire items from the feed"]
+          (radio-button "strip_items" true "none")
+          (label "none" "keep all items")
+          (radio-button "strip_items" false "remove-image-only-items")
+          (label "none" "remove image-only items")
+          (radio-button "strip_items" false "remove-text-only")
+          (label "none" "remove text-only items")
+          [:h2 "Alter individual feed items"]
+          [:p "TODO"]
+          (submit-button "Update"))])))
 
 (defn html-doc
   "Base template for generating an HTML document"
@@ -82,3 +94,4 @@
 (defn edit [username logout-url feed]
   (let [{:keys [feed-name]} feed]
     (html-doc {:content (edit-body username logout-url feed)})))
+
