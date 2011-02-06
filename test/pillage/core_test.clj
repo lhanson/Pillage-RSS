@@ -60,10 +60,10 @@
      ~@body))
 
 (def mockFeedEntity
-  (feed {:user-id mockUserName
-         :original-url "http://mock/feed/url"
-         :pillaged-feed "http://pillage.appspot.com/feeds/mock_feed_url"
-         :feed-name "Mock RSS Feed"}))
+  (pillagefeed {:user-id mockUserName
+                :original-url "http://mock/feed/url"
+                :pillaged-feed "http://pillage.appspot.com/feeds/mock_feed_url"
+                :feed-name "Mock RSS Feed"}))
 
 (def mockSyndFeed (proxy [SyndFeed] []
                      (getTitle [] "Mock Feed Title")))
@@ -73,20 +73,20 @@
   (assert-status 404 (request "/bogus-url")))
 
 (datastore-test test-save-feed-entity
-  (is (= 0 (count (find-feeds))))
+  (is (= 0 (count (find-pillagefeeds))))
   (save-entity mockFeedEntity)
-  (is (= 1 (count (find-feeds)))))
+  (is (= 1 (count (find-pillagefeeds)))))
 
 (datastore-test test-query
   (save-entity mockFeedEntity)
-  (save-entity (feed {:user-id "bogus user"
-                      :original-url "original url"
-                      :pillaged-feed "pillaged feed"
-                      :feed-name "feed name"}))
-  (is (= 2 (count (execute (query "feed"))))
+  (save-entity (pillagefeed {:user-id "bogus user"
+                              :original-url "original url"
+                              :pillaged-feed "pillaged feed"
+                              :feed-name "feed name"}))
+  (is (= 2 (count (execute (query "pillagefeed"))))
       "Should have stored two feeds total")
   (is (= 1
-         (count (execute (filter-by (query "feed") = :user-id (:user-id mockFeedEntity)))))
+         (count (execute (filter-by (query "pillagefeed") = :user-id (:user-id mockFeedEntity)))))
       "Should have found one test for mock user"))
 
 (deftest get-nonexistent-feed
@@ -97,10 +97,10 @@
 
 (deftest add-feed
   (with-local-user-and-data
-    (is (= 0 (count (find-feeds))))
+    (is (= 0 (count (find-pillagefeeds))))
     (expect [get-syndfeed (returns mockSyndFeed)] ; Mock out the SyndFeed
       (assert-redirects-to-root (request "/feeds" :method :post :params {"feed_url" "http://bogus.url"}))
-      (let [id (key->string (:key (first (find-feeds))))]
+      (let [id (key->string (:key (first (find-pillagefeeds))))]
         (assert-status 200 (request (str "/feeds/" id)))
         (switch-users "second_user@email.com"
           (assert-status 404 (request (str "/feeds/" id))))))))
@@ -115,9 +115,9 @@
 (user-test delete-feed
   (with-local-user-and-data
     (save-entity mockFeedEntity)
-    (let [id (key->string (:key (first (find-feeds))))]
+    (let [id (key->string (:key (first (find-pillagefeeds))))]
       (assert-redirects-to-root (request (str "/feeds/" id) :method :delete))
-      (is (= 0 (count (find-feeds))))
+      (is (= 0 (count (find-pillagefeeds))))
       (assert-status 404 (request (str "/feeds/" id) :method :delete)))))
 
 (user-test delete-feed-unauthenticated
@@ -125,7 +125,7 @@
   (with-local-datastore
     (assert-not-logged-in)
     (save-entity mockFeedEntity)
-    (let [id (key->string (:key (first (find-feeds))))]
+    (let [id (key->string (:key (first (find-pillagefeeds))))]
       (assert-status 200 (request (str "/feeds/" id) :method :delete))
-      (is (= 1 (count (find-feeds))) "Unauthenticated user should not be able to delete feeds"))))
+      (is (= 1 (count (find-pillagefeeds))) "Unauthenticated user should not be able to delete feeds"))))
 

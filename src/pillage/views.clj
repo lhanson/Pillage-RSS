@@ -42,21 +42,23 @@
 
 (defn- edit-body [username logout-url feed]
   (println "Editing feed" feed)
-  (let [{:keys [feed-name original-url]} feed]
+  (let [{:keys [key feed-name original-url]} feed]
     `([:p "You're logged in, " ~username "."]
       [:p [:a {:href logout-url} "Log out"]]
       [:div
         [:h1 "Edit Feed - " ~feed-name]
         [:p "Source feed: "
           [:a {:href original-url} ~original-url]]
-        ~(form-to [:post "/feeds"]
-          [:p "Feed name " (text-field "name" feed-name)]
+        ~(form-to [:post (str "/feeds/" (key->string key))]
+          [:p "Feed name "
+           [:input {:id "name" :name "name" :type "text"
+                    :size (count feed-name) :value feed-name}]]
           [:h2 "Strip entire items from the feed"]
-          (radio-button "strip_items" true "none")
+          (radio-button "strip-items" true "none")
           (label "none" "keep all items")
-          (radio-button "strip_items" false "remove-image-only-items")
+          (radio-button "strip-items" false "remove-image-only-items")
           (label "none" "remove image-only items")
-          (radio-button "strip_items" false "remove-text-only")
+          (radio-button "strip-items" false "remove-text-only")
           (label "none" "remove text-only items")
           [:h2 "Alter individual feed items"]
           [:p "TODO"]

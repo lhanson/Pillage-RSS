@@ -2,7 +2,9 @@
   (:require [pillage.views :as views])
   (:use pillage.models
         [pillage.feed-handling :only (get-syndfeed)]
-        [appengine.datastore :only (save-entity delete-entity select string->key deserialize-entity)]
+        [appengine.datastore :only (save-entity update-entity delete-entity
+                                    select string->key deserialize-entity)]
+        [appengine.datastore.keys :only (make-key)]
         [appengine.datastore.protocols :only (execute)]
         [appengine.datastore.query :only (filter-by query)]
         [appengine.datastore.service :only (get-entity)]
@@ -11,7 +13,7 @@
 
 (defn- load-feeds [userid]
   "Returns the stored feeds for the given user"
-  (execute (filter-by (query "feed") = :user-id userid)))
+  (execute (filter-by (query "pillagefeed") = :user-id userid)))
 
 (defn- load-feed [userid feed-id]
   "Returns the user's specified feed"
@@ -22,12 +24,43 @@
     (catch Exception e
       (println "Error loading feed" feed-id "for user" userid ": " e))))
 
-(defn- delete-feed- [userid id]
+(defn- delete-feed- [userid feed-id]
   "Removes the user's feed specified by id.
 
    Returns whether the feed was found and deleted."
-  (if-let [feed (load-feed userid id)]
-    (delete-entity feed))
+  (if-let [feed (load-feed userid feed-id)]
+    (delete-entity feed)))
+
+(defn- get-transformation-key [feed]
+  ; Assuming every feed will only have one transformation, we can
+  ; generate the key for it without actually querying.
+  (make-key (:key feed) "feed-transformation" 1))
+
+(defn- load-transformation [feed]
+  "Returns the transformation associated with the specified feed"
+  ; Since we already enforce user-level access to the parent feed,
+  ; we don't need to ensure that this is the current user's transformation.
+  (get-entity (get-transformation-key feed)))
+
+(defn- update-transformation [userid feed-id params]
+  "Updates the specified feed with the provided transformation"
+  (println "Got transformation params" params)
+  (let [feed (load-feed userid feed-id)
+        transformation-params (into {} (for [[k v] params] [k (str v)]))
+        ;transformation-key (make-key (:key feed) "feed-transformation" 1)
+        ]
+    (println "transformed params to" transformation-params)
+    (println "Parent is" feed)
+    ;(println "Child key is" transformation-key)
+    (if-let [child-entity (load-transformation feed)]
+      (do
+        (println "Found the child in teh db:" child-entity)
+        (update-entity child-entity transformation-params))
+      (let [transformation (feed-transformation feed transformation-params)
+            transformation-key (get-transformation-key feed)]
+        (println "Child is" (assoc transformation :key transformation-key))
+        (println "Did NOT find the child in the db")
+        (println "Saved:" (save-entity (assoc transformation :key transformation-key))))))
   )
 
 (defn home [uri]
@@ -42,10 +75,10 @@
   (if (nil? (current-user))
     (views/need-to-login (login-url uri))
     (let [syndfeed (get-syndfeed feed-url)]
-      (save-entity (feed {:user-id (:nickname (current-user))
-                          :original-url feed-url
-                          :pillaged-feed "http://pillage.appspot.com/feeds/a3kdkfjjbjbj"
-                          :feed-name (. syndfeed getTitle)}))
+      (save-entity (pillagefeed {:user-id (:nickname (current-user))
+                                 :original-url feed-url
+                                 :pillaged-feed "http://pillage.appspot.com/feeds/a3kdkfjjbjbj"
+                                 :feed-name (. syndfeed getTitle)}))
       (redirect "/"))))
 
 (defn get-feed [uri id]
@@ -58,6 +91,12 @@
     (let [nickname (:nickname (current-user))]
       (if-let [feed (load-feed nickname id)]
         (views/edit nickname (logout-url uri) feed)))))
+
+(defn update-feed [uri id transformation-params]
+  "Updates the feed specified by *id* to use the provided transformation"
+  (if (nil? (current-user))
+    (views/need-to-login (login-url uri))
+    (update-transformation (:nickname (current-user)) id transformation-params)))
 
 (defn delete-feed [uri id]
   "Deletes the specified feed"
