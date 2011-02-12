@@ -40,28 +40,19 @@
   "Returns the transformation associated with the specified feed"
   ; Since we already enforce user-level access to the parent feed,
   ; we don't need to ensure that this is the current user's transformation.
-  (get-entity (get-transformation-key feed)))
+  (if-let [entity (get-entity (get-transformation-key feed))]
+    (deserialize-entity entity)))
 
 (defn- update-transformation [userid feed-id params]
   "Updates the specified feed with the provided transformation"
-  (println "Got transformation params" params)
   (let [feed (load-feed userid feed-id)
-        transformation-params (into {} (for [[k v] params] [k (str v)]))
-        ;transformation-key (make-key (:key feed) "feed-transformation" 1)
-        ]
-    (println "transformed params to" transformation-params)
-    (println "Parent is" feed)
-    ;(println "Child key is" transformation-key)
+        transformation-params (into {} (for [[k v] params] [k (str v)])) ]
     (if-let [child-entity (load-transformation feed)]
-      (do
-        (println "Found the child in teh db:" child-entity)
-        (update-entity child-entity transformation-params))
+      (update-entity child-entity transformation-params)
       (let [transformation (feed-transformation feed transformation-params)
             transformation-key (get-transformation-key feed)]
-        (println "Child is" (assoc transformation :key transformation-key))
-        (println "Did NOT find the child in the db")
-        (println "Saved:" (save-entity (assoc transformation :key transformation-key))))))
-  )
+        (println "Creating transformation entity")
+        (save-entity (assoc transformation :key transformation-key))))))
 
 (defn home [uri]
   "Default request handler"
@@ -90,7 +81,11 @@
     (views/need-to-login (login-url uri))
     (let [nickname (:nickname (current-user))]
       (if-let [feed (load-feed nickname id)]
-        (views/edit nickname (logout-url uri) feed)))))
+        (if-let [transformation (load-transformation feed)]
+          (views/edit nickname (logout-url uri) feed transformation)
+          ; Otherwise create a default transformation
+          (let [transformation (feed-transformation feed {:name (:feed-name feed)})]
+            (views/edit nickname (logout-url uri) feed transformation)))))))
 
 (defn update-feed [uri id transformation-params]
   "Updates the feed specified by *id* to use the provided transformation"

@@ -8,7 +8,7 @@
             [compojure.route :as route]))
 
 (defn- keys-to-keywords [m]
-  "Docstring"
+  "Returns a map for which the keys in m have been transformed to keywords"
   (into {} (for [[k v] m] [(keyword k) v])))
 
 (defroutes pillage-rss

@@ -28,6 +28,22 @@
 (defn- printfeed [{:keys [key, feed-name, user-id]}]
   (println "Feed key:" (key->string key) ", title:" feed-name ", user id:" user-id))
 
+(defn- radio [group-name value label-text default-checked value-map]
+  "Generates a hiccup.form-helpers/radio-button (and associated label) with
+   its checked state determined by the associated value in value-map.
+  
+   Example: (radio \"num_items\" \"number of items\" true {:num_items \"one\"} \"none\")
+     would result in the radio button being unchecked because the value-map
+     is populated and does not match the value."
+  (radio-button
+    (str group-name)
+    ; Check it if the value-map has this value set for group-name
+    ; or if no value is set and the default is true
+    (let [value-from-map ((keyword group-name) value-map)]
+      (or (= value value-from-map)
+          (and (nil? value-from-map) default-checked)))
+    value))
+
 (defn- default-body [username logout-url feeds]
   `([:p "You're logged in, " ~username "."]
     [:p [:a {:href ~logout-url} "Log out"]]
@@ -40,9 +56,10 @@
       ~(map printfeed feeds)
       ~(map display-feed feeds)]))
 
-(defn- edit-body [username logout-url feed]
-  (println "Editing feed" feed)
-  (let [{:keys [key feed-name original-url]} feed]
+(defn- edit-body [username logout-url feed transformation]
+  (println "Editing feed" feed "and transformation" transformation)
+  (let [{:keys [key original-url]} feed
+        feed-name (:name transformation)]
     `([:p "You're logged in, " ~username "."]
       [:p [:a {:href logout-url} "Log out"]]
       [:div
@@ -53,13 +70,15 @@
           [:p "Feed name "
            [:input {:id "name" :name "name" :type "text"
                     :size (count feed-name) :value feed-name}]]
+
           [:h2 "Strip entire items from the feed"]
-          (radio-button "strip-items" true "none")
+          (radio "strip-items" "none" "keep all items" true transformation)
           (label "none" "keep all items")
-          (radio-button "strip-items" false "remove-image-only-items")
+          (radio "strip-items" "remove-image-only-items" "remove image-only items" false transformation)
           (label "none" "remove image-only items")
-          (radio-button "strip-items" false "remove-text-only")
+          (radio "strip-items" "remove-text-only" "remove text-only items" false transformation)
           (label "none" "remove text-only items")
+
           [:h2 "Alter individual feed items"]
           [:p "TODO"]
           (submit-button "Update"))])))
@@ -93,7 +112,7 @@
 (defn home [username logout-url feeds]
   (html-doc {:content (default-body username logout-url feeds)}))
 
-(defn edit [username logout-url feed]
+(defn edit [username logout-url feed transformation]
   (let [{:keys [feed-name]} feed]
-    (html-doc {:content (edit-body username logout-url feed)})))
+    (html-doc {:content (edit-body username logout-url feed transformation)})))
 
