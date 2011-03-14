@@ -14,10 +14,13 @@
 (defroutes pillage-rss
   (GET "/" {uri :uri} (handlers/home uri))
 
+  (GET "/feeds" {uri :uri} (handlers/home uri))
   (POST "/feeds" {uri :uri {feed_url "feed_url"} :params}
     (handlers/add-feed uri feed_url))
 
   (GET ["/feeds/:id"] {{id "id"} :params :as request}
+    (handlers/edit-feed (:uri request) id))
+  (GET ["/feeds/:id.rss"] {{id "id"} :params :as request}
     (handlers/get-feed (:uri request) id))
   (DELETE ["/feeds/:id"] {{id "id"} :params :as request}
     (handlers/delete-feed (:uri request) id))

@@ -90,7 +90,7 @@
       "Should have found one test for mock user"))
 
 (deftest get-nonexistent-feed
-  "Exercises the get-feed handler, making sure nonexistent feeds return 404"
+  "Exercises the edit-feed handler, making sure nonexistent feeds return 404"
   (with-local-user-and-data
     (expect [get-syndfeed (returns mockSyndFeed)] ; Mock out the SyndFeed
       (assert-status 404 (request "/feeds/nonexistent" :method :get)))))
@@ -128,4 +128,17 @@
     (let [id (key->string (:key (first (find-pillagefeeds))))]
       (assert-status 200 (request (str "/feeds/" id) :method :delete))
       (is (= 1 (count (find-pillagefeeds))) "Unauthenticated user should not be able to delete feeds"))))
+
+(deftest new-feed-has-transformation
+  "Makes sure that a newly-added feed is created with a default transformation"
+  (with-local-user-and-data
+    (expect [get-syndfeed (returns mockSyndFeed)] ; Mock out the SyndFeed
+      (request "/feeds" :method :post :params {"feed_url" "http://bogus.url"})
+      (let [id (key->string (:key (first (find-pillagefeeds))))
+            pillaged-url (str "/feeds/" id ".rss")]
+        (assert-status 200 (request pillaged-url))
+        ; Pillaged feeds are necessarily unauthenticated so RSS aggregators can
+        ; get them.
+        (switch-users "second_user@email.com"
+          (assert-status 200 (request pillaged-url)))))))
 

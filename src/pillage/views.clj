@@ -22,8 +22,8 @@
   [:p
     [:a {:href pillaged-url} feed-name] "|"
     [:a {:href (str "/feeds/" (key->string id))} "edit"] "|"
-    (form-to [:delete (str "/feeds/" (key->string id))] (submit-button "delete"))
-    [:a {:href original-url} "original"]])
+    [:a {:href original-url} "original"]
+    (form-to [:delete (str "/feeds/" (key->string id))] (submit-button "delete"))])
 
 (defn- printfeed [{:keys [key, feed-name, user-id]}]
   (println "Feed key:" (key->string key) ", title:" feed-name ", user id:" user-id))
@@ -65,7 +65,7 @@
       [:div
         [:h1 "Edit Feed - " ~feed-name]
         [:p "Source feed: "
-          [:a {:href original-url} ~original-url]]
+          [:a {:href ~original-url} ~original-url]]
         ~(form-to [:post (str "/feeds/" (key->string key))]
           [:p "Feed name "
            [:input {:id "name" :name "name" :type "text"
