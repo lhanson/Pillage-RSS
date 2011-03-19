@@ -20,8 +20,7 @@
                       pillaged-url :pillaged-url
                       original-url :original-url}]
   [:p
-    [:a {:href pillaged-url} feed-name] "|"
-    [:a {:href (str "/feeds/" (key->string id))} "edit"] "|"
+    [:a {:href (str "/feeds/" (key->string id))} feed-name] "|"
     [:a {:href original-url} "original"]
     (form-to [:delete (str "/feeds/" (key->string id))] (submit-button "delete"))])
 
@@ -56,10 +55,9 @@
       ~(map printfeed feeds)
       ~(map display-feed feeds)]))
 
-(defn- edit-body [username logout-url feed transformation]
-  (println "Editing feed" feed "and transformation" transformation)
-  (let [{:keys [key original-url]} feed
-        feed-name (:name transformation)]
+(defn- edit-body [username logout-url feed filters]
+  (println "Editing feed" feed "and filters" filters)
+  (let [{:keys [key original-url feed-name]} feed]
     `([:p "You're logged in, " ~username "."]
       [:p [:a {:href logout-url} "Log out"]]
       [:div
@@ -72,15 +70,18 @@
                     :size (count feed-name) :value feed-name}]]
 
           [:h2 "Strip entire items from the feed"]
-          (radio "strip-items" "none" "keep all items" true transformation)
-          (label "none" "keep all items")
-          (radio "strip-items" "remove-image-only-items" "remove image-only items" false transformation)
-          (label "none" "remove image-only items")
-          (radio "strip-items" "remove-text-only" "remove text-only items" false transformation)
-          (label "none" "remove text-only items")
-
-          [:h2 "Alter individual feed items"]
-          [:p "TODO"]
+          (let [{:keys [exclusions modifications]} filters]
+            `([:p "Have " ~(count exclusions) " exclusion filters"]
+              [:p "Have " ~(count modifications) " modification filters"]))
+;          (radio "strip-items" "none" "keep all items" true transformation)
+;          (label "none" "keep all items")
+;          (radio "strip-items" "remove-image-only-items" "remove image-only items" false transformation)
+;          (label "none" "remove image-only items")
+;          (radio "strip-items" "remove-text-only" "remove text-only items" false transformation)
+;          (label "none" "remove text-only items")
+;
+;          [:h2 "Alter individual feed items"]
+;          [:p "TODO"]
           (submit-button "Update"))])))
 
 (defn html-doc
@@ -112,7 +113,6 @@
 (defn home [username logout-url feeds]
   (html-doc {:content (default-body username logout-url feeds)}))
 
-(defn edit [username logout-url feed transformation]
-  (let [{:keys [feed-name]} feed]
-    (html-doc {:content (edit-body username logout-url feed transformation)})))
+(defn edit [username logout-url feed filters]
+  (html-doc {:content (edit-body username logout-url feed filters)}))
 

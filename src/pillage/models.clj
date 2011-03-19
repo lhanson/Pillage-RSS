@@ -1,11 +1,5 @@
 (ns pillage.models
   (:use appengine.datastore))
-  ;(:use [appengine.datastore :only (defentity)]))
-
-; TODO: how do I persist a child entity (FeedTransformation) and then be able to
-; load it based on the id of the parent?
-; IRC says don't do either, just generate the child's key (make it "1", then I'll
-; always know what the child's key is appid_pillagefeed_1_feed-transformation-1
 
 ; For some unknown reason (some weird namespace collision?), using a name
 ; containing "Feed" gives me NoSuchMethodErrors when creating one. In the
@@ -13,10 +7,24 @@
 (defentity Pillagefeed ()
   ((user-id)
    (original-url)
-   (pillaged-feed)
-   (feed-name)))
+   (feed-name)
+   (exclusion-filters)
+   (modification-filters)))
 
-(defentity FeedTransformation (Pillagefeed)
-  ((name)
-   (strip-items)))
+; A grouping of mutually exclusive filters
+(defentity FilterGroup (Pillagefeed)
+  ((label)
+   (filters)))
+
+; A filter which can exclude feed items
+(defentity ExclusionFilter (Pillagefeed)
+  ((label)
+   (type)
+   (regex)))
+
+; A filter which modifies the content of feed items
+(defentity ModificationFilter (Pillagefeed)
+  ((label)
+   (type)
+   (regex)))
 

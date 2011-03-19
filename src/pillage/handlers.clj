@@ -31,35 +31,50 @@
   (if-let [feed (load-feed userid feed-id)]
     (delete-entity feed)))
 
-(defn- get-transformation-key [feed]
-  ; Assuming every feed will only have one transformation, we can
-  ; generate the key for it without actually querying.
-  (make-key (:key feed) "feed-transformation" 1))
+(defn- load-filter [filter-id]
+  "Loads the filter corresponding to the given id"
+  (try
+    (if-let [filter (get-entity (string->key filter-id))]
+      (deserialize-entity filter))
+    (catch Exception e
+      (println "Error loading filter" filter-id))))
 
-(defn- load-transformation [feed]
-  "Returns the transformation associated with the specified feed"
-  ; Since we already enforce user-level access to the parent feed,
-  ; we don't need to ensure that this is the current user's transformation.
-  (if-let [entity (get-entity (get-transformation-key feed))]
-    (deserialize-entity entity)
-    (do
-      (println "!!!!!!!!!!!!!!!!!!!Creating default transformation feed from" feed)
-      (let [transformation (feed-transformation feed {:name (:feed-name feed)})
-          transformation-key (get-transformation-key feed)]
-      (println "!!!!!!!Creating transformation entity")
-      (save-entity (assoc transformation :key transformation-key))
-      (assoc transformation :key transformation-key)))))
+;(defn- get-transformation-key [feed]
+;  ; Assuming every feed will only have one transformation, we can
+;  ; generate the key for it without actually querying.
+;  (make-key (:key feed) "feed-transformation" 1))
 
-(defn- update-transformation [userid feed-id params]
-  "Updates the specified feed with the provided transformation"
-  (let [feed (load-feed userid feed-id)
-        transformation-params (into {} (for [[k v] params] [k (str v)])) ]
-    (if-let [child-entity (load-transformation feed)]
-      (update-entity child-entity transformation-params))))
-     ; (let [transformation (feed-transformation feed transformation-params)
-     ;       transformation-key (get-transformation-key feed)]
-     ;   (println "Creating transformation entity")
-     ;   (save-entity (assoc transformation :key transformation-key))))))
+(defn- load-filters [feed]
+  "Returns the filters associated with the specified feed"
+  (let [exclusions    (map load-filter (:exclusion-filters feed))
+        modifications (map load-filter (:modification-filters feed))]
+    (println "Exclusions" exclusions ", modifications" modifications)
+    (if (and (empty? exclusions) (empty? modifications))
+      (println "BOTH ARE EMPTY"))
+    {:exclusions exclusions :modifications modifications})
+  ; TODO: for each key 
+;  (if-let [entity (get-entity (get-transformation-key feed))]
+;    (deserialize-entity entity)
+    ;(do
+    ;  (println "!!!!!!!!!!!!!!!!!!!Creating default transformation feed from" feed)
+    ;  (let [transformation (feed-transformation feed {:name (:feed-name feed)})
+    ;      transformation-key (get-transformation-key feed)]
+    ;  (println "!!!!!!!Creating transformation entity")
+    ;  (save-entity (assoc transformation :key transformation-key))
+    ;  (assoc transformation :key transformation-key)))
+;    ))
+)
+
+;(defn- update-filters [userid feed-id params]
+;  "Updates the specified feed with the provided transformation"
+;  (let [feed (load-feed userid feed-id)
+;        transformation-params (into {} (for [[k v] params] [k (str v)])) ]
+;    (if-let [child-entity (load-filters feed)]
+;      (update-entity child-entity transformation-params))))
+;     ; (let [transformation (feed-transformation feed transformation-params)
+;     ;       transformation-key (get-transformation-key feed)]
+;     ;   (println "Creating transformation entity")
+;     ;   (save-entity (assoc transformation :key transformation-key))))))
 
 (defn home [uri]
   "Default request handler"
@@ -75,8 +90,6 @@
     (let [syndfeed (get-syndfeed feed-url)]
       (save-entity (pillagefeed {:user-id (:nickname (current-user))
                                  :original-url feed-url
-                                 ; TODO: probably don't need this field, remove from model
-                                 :pillaged-feed "http://pillage.appspot.com/feeds/a3kdkfjjbjbj"
                                  :feed-name (. syndfeed getTitle)}))
       (redirect "/"))))
 
@@ -87,17 +100,15 @@
     (views/need-to-login (login-url uri))
     (let [nickname (:nickname (current-user))]
       (if-let [feed (load-feed nickname id)]
-        (if-let [transformation (load-transformation feed)]
-          (views/edit nickname (logout-url uri) feed transformation)
-          ; Otherwise create a default transformation
-          (let [transformation (feed-transformation feed {:name (:feed-name feed)})]
-            (views/edit nickname (logout-url uri) feed transformation)))))))
+        (if-let [filters (load-filters feed)]
+          (views/edit nickname (logout-url uri) feed filters))))))
 
 (defn update-feed [uri id transformation-params]
   "Updates the feed specified by *id* to use the provided transformation"
   (if (nil? (current-user))
     (views/need-to-login (login-url uri))
-    (update-transformation (:nickname (current-user)) id transformation-params)))
+    ;(update-filters (:nickname (current-user)) id transformation-params)))
+    ))
 
 (defn delete-feed [uri id]
   "Deletes the specified feed"
@@ -111,13 +122,14 @@
   ; TODO: this should not require the user to be logged in
   (let [nickname (:nickname (current-user))]
     (if-let [feed (load-feed nickname id)]
-      (if-let [transformation (load-transformation feed)]
+      (if-let [filters (load-filters feed)]
         (let [syndfeed (get-syndfeed (:original-url feed))]
           (println "Loading RSS for" feed)
           (println "Syndfeed:" syndfeed)
+          (println "RSS:" (get-rss syndfeed))
           {:headers {"Content-Type" "text/xml"}
            :body (get-rss syndfeed)})
-        (println "Error loading feed transformation for" id))
+        (println "Error loading filters for feed" id))
       (println "Error loading feed" id))))
       ; TODO: redirect to a 404
 
