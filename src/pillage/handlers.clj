@@ -15,12 +15,51 @@
   "Returns the stored feeds for the given user"
   (execute (filter-by (query "pillagefeed") = :user-id userid)))
 
+(defn- load-filter [filter-id]
+  "Loads the filter corresponding to the given id"
+  (try
+    (if-let [filter (get-entity (string->key filter-id))]
+      (deserialize-entity filter)))
+    (catch Exception e
+      (println "Error loading filter" filter-id)))
+
+;(defn- load-filters-for-author[userid]
+;  "Returns the filters created by the given user. Typical use would be to load
+;   the default filters available to every user."
+;  (defn load-filters-for-group [group]
+;    (assoc group :filters (map load-filter (:filters group))))
+;  ; TODO: if this is a problem name-wise, try ExclusionFilter and ModificationFilter
+;  (let [groups (execute (filter-by (query "filter-group") = :author userid))]
+;    (map load-filters-for-group groups)))
+
+(defn- load-filters [feed]
+  "Loads the filters associated with the specified feed, associating them with
+   the returned instance of the feed"
+  (let [exclusions    (map load-filter (:exclusion-filters feed))
+        modifications (map load-filter (:modification-filters feed))]
+    (println "Exclusions" exclusions ", modifications" modifications)
+    ; TODO: just assign default groups initially
+    (if (and (empty? exclusions) (empty? modifications))
+      (println "Feed is not assigned to any filters")
+      )
+    (assoc feed :exclusions exclusions :modifications modifications)
+;  (if-let [entity (get-entity (get-transformation-key feed))]
+;    (deserialize-entity entity)
+    ;(do
+    ;  (println "!!!!!!!!!!!!!!!!!!!Creating default transformation feed from" feed)
+    ;  (let [transformation (feed-transformation feed {:name (:feed-name feed)})
+    ;      transformation-key (get-transformation-key feed)]
+    ;  (println "!!!!!!!Creating transformation entity")
+    ;  (save-entity (assoc transformation :key transformation-key))
+    ;  (assoc transformation :key transformation-key)))
+    ))
+
 (defn- load-feed [userid feed-id]
   "Returns the user's specified feed"
   (try
     (if-let [feed (get-entity (string->key feed-id))]
       (if (= userid (get (.getProperties feed) "user-id"))
-        (deserialize-entity feed)))
+        (load-filters (deserialize-entity feed))))
     (catch Exception e
       (println "Error loading feed" feed-id "for user" userid ": " e))))
 
@@ -31,39 +70,10 @@
   (if-let [feed (load-feed userid feed-id)]
     (delete-entity feed)))
 
-(defn- load-filter [filter-id]
-  "Loads the filter corresponding to the given id"
-  (try
-    (if-let [filter (get-entity (string->key filter-id))]
-      (deserialize-entity filter))
-    (catch Exception e
-      (println "Error loading filter" filter-id))))
-
 ;(defn- get-transformation-key [feed]
 ;  ; Assuming every feed will only have one transformation, we can
 ;  ; generate the key for it without actually querying.
 ;  (make-key (:key feed) "feed-transformation" 1))
-
-(defn- load-filters [feed]
-  "Returns the filters associated with the specified feed"
-  (let [exclusions    (map load-filter (:exclusion-filters feed))
-        modifications (map load-filter (:modification-filters feed))]
-    (println "Exclusions" exclusions ", modifications" modifications)
-    (if (and (empty? exclusions) (empty? modifications))
-      (println "BOTH ARE EMPTY"))
-    {:exclusions exclusions :modifications modifications})
-  ; TODO: for each key 
-;  (if-let [entity (get-entity (get-transformation-key feed))]
-;    (deserialize-entity entity)
-    ;(do
-    ;  (println "!!!!!!!!!!!!!!!!!!!Creating default transformation feed from" feed)
-    ;  (let [transformation (feed-transformation feed {:name (:feed-name feed)})
-    ;      transformation-key (get-transformation-key feed)]
-    ;  (println "!!!!!!!Creating transformation entity")
-    ;  (save-entity (assoc transformation :key transformation-key))
-    ;  (assoc transformation :key transformation-key)))
-;    ))
-)
 
 ;(defn- update-filters [userid feed-id params]
 ;  "Updates the specified feed with the provided transformation"

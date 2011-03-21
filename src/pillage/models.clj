@@ -11,20 +11,24 @@
    (exclusion-filters)
    (modification-filters)))
 
-; A grouping of mutually exclusive filters
-(defentity FilterGroup (Pillagefeed)
-  ((label)
+; A grouping of filters within a category
+(defentity FilterGroup ()
+  ((user-id)
+   (label)
+   (exclusive) ; whether the filters are mutually exclusive
    (filters)))
 
 ; A filter which can exclude feed items
-(defentity ExclusionFilter (Pillagefeed)
-  ((label)
+(defentity ExclusionFilter ()
+  ((user-id)
+   (label)
    (type)
    (regex)))
 
 ; A filter which modifies the content of feed items
-(defentity ModificationFilter (Pillagefeed)
-  ((label)
+(defentity ModificationFilter ()
+  ((user-id)
+   (label)
    (type)
    (regex)))
 
