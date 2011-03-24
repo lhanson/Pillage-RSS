@@ -19,9 +19,9 @@
   "Loads the filter corresponding to the given id"
   (try
     (if-let [filter (get-entity (string->key filter-id))]
-      (deserialize-entity filter)))
+      (deserialize-entity filter))
     (catch Exception e
-      (println "Error loading filter" filter-id)))
+      (println "Error loading filter" filter-id))))
 
 ;(defn- load-filters-for-author[userid]
 ;  "Returns the filters created by the given user. Typical use would be to load
@@ -38,20 +38,10 @@
   (let [exclusions    (map load-filter (:exclusion-filters feed))
         modifications (map load-filter (:modification-filters feed))]
     (println "Exclusions" exclusions ", modifications" modifications)
-    ; TODO: just assign default groups initially
     (if (and (empty? exclusions) (empty? modifications))
       (println "Feed is not assigned to any filters")
       )
     (assoc feed :exclusions exclusions :modifications modifications)
-;  (if-let [entity (get-entity (get-transformation-key feed))]
-;    (deserialize-entity entity)
-    ;(do
-    ;  (println "!!!!!!!!!!!!!!!!!!!Creating default transformation feed from" feed)
-    ;  (let [transformation (feed-transformation feed {:name (:feed-name feed)})
-    ;      transformation-key (get-transformation-key feed)]
-    ;  (println "!!!!!!!Creating transformation entity")
-    ;  (save-entity (assoc transformation :key transformation-key))
-    ;  (assoc transformation :key transformation-key)))
     ))
 
 (defn- load-feed [userid feed-id]

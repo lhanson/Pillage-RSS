@@ -8,26 +8,26 @@
   ((user-id)
    (original-url)
    (feed-name)
-   (exclusion-filters)
-   (modification-filters)))
+   (exclusion-filters)       ; keys of the exclusion filters assigned
+   (modification-filters)))  ; keys of the modification filters assigned
 
 ; A grouping of filters within a category
 (defentity FilterGroup ()
-  ((user-id)
+  ((author)
    (label)
    (exclusive) ; whether the filters are mutually exclusive
    (filters)))
 
 ; A filter which can exclude feed items
 (defentity ExclusionFilter ()
-  ((user-id)
+  ((author)
    (label)
    (type)
    (regex)))
 
 ; A filter which modifies the content of feed items
 (defentity ModificationFilter ()
-  ((user-id)
+  ((author)
    (label)
    (type)
    (regex)))
