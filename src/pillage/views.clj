@@ -24,6 +24,13 @@
     [:a {:href original-url} "original"]
     (form-to [:delete (str "/feeds/" (key->string id))] (submit-button "delete"))])
 
+(defn- display-filter [afilter]
+  (println "Displaying" afilter)
+  `([:h3 "Label:" ~(:label afilter)]
+    [:p "Author:" ~(:author afilter)]
+    [:p "Type:" ~(:type afilter)]
+    [:p "Regex:" ~(:regex filter)]))
+
 (defn- printfeed [{:keys [key, feed-name, user-id]}]
   (println "Feed key:" (key->string key) ", title:" feed-name ", user id:" user-id))
 
@@ -56,7 +63,7 @@
       ~(map display-feed feeds)]))
 
 (defn- edit-body [username logout-url feed filters]
-  (println "Editing feed" feed "and filters" filters)
+  (println "Editing feed" feed)
   (let [{:keys [key original-url feed-name]} feed]
     `([:p "You're logged in, " ~username "."]
       [:p [:a {:href logout-url} "Log out"]]
@@ -68,11 +75,14 @@
           [:p "Feed name "
            [:input {:id "name" :name "name" :type "text"
                     :size (count feed-name) :value feed-name}]]
-
           [:h2 "Strip entire items from the feed"]
-          (let [{:keys [exclusions modifications]} filters]
-            `([:p "Have " ~(count exclusions) " exclusion filters"]
-              [:p "Have " ~(count modifications) " modification filters"]))
+          `([:p "Have " ~(count (:exclusions feed)) " exclusion filters"]
+            ~(map display-filter (:exclusions feed)))
+          [:h2 "Modify items within the feed"]
+          `([:p "Have " ~(count (:modifications feed)) " modification filters"]
+            ~(map display-filter (:modifications feed)))
+            ;`([:p "Have " ~(count (:exclusion-filters feed)) " exclusion filters"]
+            ;  [:p "Have " ~(count (:modification-filters feed)) " exclusion filters"]))
 ;          (radio "strip-items" "none" "keep all items" true transformation)
 ;          (label "none" "keep all items")
 ;          (radio "strip-items" "remove-image-only-items" "remove image-only items" false transformation)

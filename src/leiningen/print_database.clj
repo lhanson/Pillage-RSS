@@ -14,6 +14,9 @@
     (with-appengine (local-proxy :email "test@example.com" :admin true)
       (do
         (let [feed-count (count (find-pillagefeeds))
-              transformation-count (count (find-feed-transformations))]
-          (println "Have" feed-count "feeds and " transformation-count "transformations"))))))
+              exclusion-count (count (find-exclusion-filters))
+              modification-count (count (find-modification-filters))
+              ]
+          (println "Have" feed-count "feeds, " exclusion-count "exclusion filters, and"
+                   modification-count "modification filters"))))))
 

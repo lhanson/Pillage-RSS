@@ -6,6 +6,10 @@
         appengine.environment
         [appengine.users :only (current-user)]))
 
+(def *system-user*
+  ;"The username which represents system data common to all users"
+  "_system_")
+
 (defn reset-database []
   "A Leiningen task which wipes out the existing feed database and populates
   it with standard entries."
@@ -31,7 +35,7 @@
               ; Delete feeds
               (if (pos? feed-count)
                 (do
-                  (println "Deleting" feed-count "existing feeds for user "
+                  (println "Deleting" feed-count "existing feeds for user"
                            (:email (current-user)))
                   (doseq [feed (find-pillagefeeds)]
                     (delete-entity feed))))
@@ -42,11 +46,14 @@
                   (doseq [mod-filter (find-modification-filters)]
                     (delete-entity mod-filter)))))
             ; Create the filters
-            (let [strip-images-mod (modification-filter {:author "_system_"
-                                                         :label  "Strip Images From Item"
-                                                         :type   "Type - TODO"
-                                                         :regex  "s/image//"})
-                  mod-filters [strip-images-mod]
+            (let [mod-filters [(modification-filter {:author *system-user*
+                                                     :label  "Strip Images From Item"
+                                                     :type   "Type - TODO"
+                                                     :regex  "s/image//"})
+                               (modification-filter {:author *system-user*
+                                                     :label  "Strip Text From Item"
+                                                     :type   "Type - TODO"
+                                                     :regex  "s/text//"})]
                   mod-filter-keys (map #(:key (save-entity %1)) mod-filters)]
               ; Create the default feeds
               (doseq [url *urls*]
@@ -56,6 +63,8 @@
                                   :original-url url
                                   :feed-name (. syndfeed getTitle)
                                   :modification-filters mod-filter-keys})))))
-            (println "Populated the database with" (count (find-pillagefeeds)) "feeds"))))))
+            (println "Populated the database with" (count (find-pillagefeeds)) "feeds,"
+                     (count (find-modification-filters)) "modification filters, and"
+                     (count (find-exclusion-filters)) "exclusion filters"))))))
   (println "Finished"))
 

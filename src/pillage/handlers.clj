@@ -15,13 +15,14 @@
   "Returns the stored feeds for the given user"
   (execute (filter-by (query "pillagefeed") = :user-id userid)))
 
-(defn- load-filter [filter-id]
+(defn- load-filter [filter-key]
   "Loads the filter corresponding to the given id"
   (try
-    (if-let [filter (get-entity (string->key filter-id))]
+    ;(println "--- getting entity for filter ID" (string->key filter-key))
+    (if-let [filter (get-entity filter-key)]
       (deserialize-entity filter))
     (catch Exception e
-      (println "Error loading filter" filter-id))))
+      (println "Error loading filter" filter-key ": " e))))
 
 ;(defn- load-filters-for-author[userid]
 ;  "Returns the filters created by the given user. Typical use would be to load
@@ -100,8 +101,7 @@
     (views/need-to-login (login-url uri))
     (let [nickname (:nickname (current-user))]
       (if-let [feed (load-feed nickname id)]
-        (if-let [filters (load-filters feed)]
-          (views/edit nickname (logout-url uri) feed filters))))))
+        (views/edit nickname (logout-url uri) feed (:modifications feed))))))
 
 (defn update-feed [uri id transformation-params]
   "Updates the feed specified by *id* to use the provided transformation"
