@@ -10,11 +10,11 @@
                  ; Including xerces JAR to sidestep "JDOM could not create a SAX parser"
                  ; issue per http://code.google.com/p/googleappengine/issues/detail?id=1367
                  [org.bluestemsoftware.open.maven.tparty/xerces-impl "2.9.0"]]
-  :dev-dependencies [[com.google.appengine/appengine-api-labs "1.4.2"]
-                     [com.google.appengine/appengine-api-stubs "1.4.2"]
-                     [com.google.appengine/appengine-testing "1.4.2"]
+  :dev-dependencies [[com.google.appengine/appengine-api-labs "1.5.0"]
+                     [com.google.appengine/appengine-api-stubs "1.5.0"]
+                     [com.google.appengine/appengine-testing "1.5.0"]
                      [rome "0.9"]
-                     [appengine "0.4.3-SNAPSHOT"]]
+                     [org.clojars.lhanson/appengine "0.4.4-SNAPSHOT"]]
   :aot [pillage.core]
   :compile-path "war/WEB-INF/classes"
   :library-path "war/WEB-INF/lib")
