@@ -13,6 +13,7 @@
         com.google.appengine.api.users.dev.LocalUserService
         com.google.appengine.tools.development.testing.LocalServiceTestHelper
         com.google.appengine.tools.development.testing.LocalDatastoreServiceTestConfig
+        com.sun.syndication.feed.rss.Channel
         com.sun.syndication.feed.synd.SyndFeed))
 
 (defn- request
@@ -64,73 +65,82 @@
                 :original-url "http://mock/feed/url"
                 :feed-name "Mock RSS Feed"}))
 
-(def mockSyndFeed (proxy [SyndFeed] []
-                    (getTitle [] "Mock Feed Title")))
+(def mockSyndFeed
+  (proxy [SyndFeed] []
+    (getTitle [] "Mock Feed Title")
+    (createWireFeed [] (proxy [Channel] []
+      (getFeedType [] "rss_2.0")
+      (getTitle [] "Mock Feed Title")
+      (getDescription [] "Mock Feed Description")
+      (getLink [] "Mock Feed Link")))))
 
-;(user-test test-routes
-;  (assert-status 200 (request "/"))
-;  (assert-status 404 (request "/bogus-url")))
-;
-;(datastore-test test-save-feed-entity
-;  (is (= 0 (count (find-pillagefeeds))))
-;  (save-entity mockFeedEntity)
-;  (is (= 1 (count (find-pillagefeeds)))))
-;
-;(datastore-test test-query
-;  (save-entity mockFeedEntity)
-;  (save-entity (pillagefeed {:user-id "bogus user"
-;                             :original-url "original url"
-;                             :feed-name "feed name"}))
-;  (is (= 2 (count (execute (query "pillagefeed"))))
-;      "Should have stored two feeds total")
-;  (is (= 1
-;         (count (execute (filter-by (query "pillagefeed") = :user-id (:user-id mockFeedEntity)))))
-;      "Should have found one test for mock user"))
+(user-test test-routes
+  (assert-status 200 (request "/"))
+  (assert-status 404 (request "/bogus-url")))
 
-;(deftest get-nonexistent-feed
-;  "Exercises the edit-feed handler, making sure nonexistent feeds return 404"
-;  (with-local-user-and-data
-;    (expect [get-syndfeed (returns mockSyndFeed)] ; Mock out the SyndFeed
-;      (assert-status 404 (request "/feeds/nonexistent" :method :get)))))
-;
-;(deftest add-feed
-;  (with-local-user-and-data
-;    (is (= 0 (count (find-pillagefeeds))))
-;    (expect [get-syndfeed (returns mockSyndFeed)] ; Mock out the SyndFeed
-;      (assert-redirects-to-root (request "/feeds" :method :post :params {"feed_url" "http://bogus.url"}))
-;      (let [id (key->string (:key (first (find-pillagefeeds))))]
+(datastore-test test-save-feed-entity
+  (is (= 0 (count (find-pillagefeeds))))
+  (save-entity mockFeedEntity)
+  (is (= 1 (count (find-pillagefeeds)))))
+
+(datastore-test test-query
+  (save-entity mockFeedEntity)
+  (save-entity (pillagefeed {:user-id "bogus user"
+                             :original-url "original url"
+                             :feed-name "feed name"}))
+  (is (= 2 (count (execute (query "pillagefeed"))))
+      "Should have stored two feeds total")
+  (is (= 1
+         (count (execute (filter-by (query "pillagefeed") = :user-id (:user-id mockFeedEntity)))))
+      "Should have found one test for mock user"))
+
+(deftest get-nonexistent-feed
+  "Exercises the edit-feed handler, making sure nonexistent feeds return 404"
+  (with-local-user-and-data
+    (expect [get-syndfeed (returns mockSyndFeed)] ; Mock out the SyndFeed
+      (assert-status 404 (request "/feeds/nonexistent" :method :get)))))
+
+(deftest ^{:add-feed true} add-feed
+  (with-local-user-and-data
+    (is (= 0 (count (find-pillagefeeds))))
+    (expect [get-syndfeed (returns mockSyndFeed)] ; Mock out the SyndFeed
+      (assert-redirects-to-root (request "/feeds" :method :post :params {"feed_url" "http://bogus.url"}))
+      (let [id (key->string (:key (first (find-pillagefeeds))))]
 ;        (assert-status 200 (request (str "/feeds/" id)))
-;        (switch-users "second_user@email.com"
-;          ; Accessing the feed as RSS is allowed for all users
-;; TODO: do a GET on it with RSS in Accept header
-;          ; Accessing the feed as HTML (editing it) only allowed for logged-in owner
+        (switch-users "second_user@email.com"
+          ; Accessing the feed as RSS is allowed for all users
+          (println "Getting RSS, id" id)
+;          (assert-status 200 (request (str "/feeds/" id)))
+          (assert-status 200 (request (str "/feeds/" id "/rss")))
+; TODO: do a GET on it with RSS in Accept header
+          ; Accessing the feed as HTML (editing it) only allowed for logged-in owner
 ;          (assert-status 404 (request (str "/feeds/" id)))
-;; TODO: do an unauthenticated GET on it and make sure we get the RSS back
-;          )))))
-;
-;(user-test add-feed-anauthenticated
-;  "Any unauthenticated request should be shown the login page"
-;  (assert-not-logged-in)
-;  (let [response (request "/feeds" :method :post :params {"feed_url" "http://bogus.url"})]
-;    (and (assert-status 200 response)
-;         (is (re-find #"Log in" (:body response))))))
-;
-;(user-test delete-feed
-;  (with-local-user-and-data
-;    (save-entity mockFeedEntity)
-;    (let [id (key->string (:key (first (find-pillagefeeds))))]
-;      (assert-redirects-to-root (request (str "/feeds/" id) :method :delete))
-;      (is (= 0 (count (find-pillagefeeds))))
-;      (assert-status 404 (request (str "/feeds/" id) :method :delete)))))
-;
-;(user-test delete-feed-unauthenticated
-;  "Double check that all unauthenticated requests are shown the login page"
-;  (with-local-datastore
-;    (assert-not-logged-in)
-;    (save-entity mockFeedEntity)
-;    (let [id (key->string (:key (first (find-pillagefeeds))))]
-;      (assert-status 200 (request (str "/feeds/" id) :method :delete))
-;      (is (= 1 (count (find-pillagefeeds))) "Unauthenticated user should not be able to delete feeds"))))
+; TODO: do an unauthenticated GET on it and make sure we get the RSS back
+          )))))
+
+(user-test add-feed-anauthenticated
+  "Any unauthenticated request should be shown the login page"
+  (assert-not-logged-in)
+  (let [response (request "/feeds" :method :post :params {"feed_url" "http://bogus.url"})]
+    (and (assert-status 200 response)
+         (is (re-find #"Log in" (:body response))))))
+
+(user-test delete-feed
+  (with-local-user-and-data
+    (save-entity mockFeedEntity)
+    (let [id (key->string (:key (first (find-pillagefeeds))))]
+      (assert-redirects-to-root (request (str "/feeds/" id) :method :delete))
+      (is (= 0 (count (find-pillagefeeds))))
+      (assert-status 404 (request (str "/feeds/" id) :method :delete)))))
+
+(user-test delete-feed-unauthenticated
+  "Double check that all unauthenticated requests are shown the login page"
+  (with-local-datastore
+    (assert-not-logged-in)
+    (save-entity mockFeedEntity)
+    (let [id (key->string (:key (first (find-pillagefeeds))))]
+      (assert-status 200 (request (str "/feeds/" id) :method :delete))
+      (is (= 1 (count (find-pillagefeeds))) "Unauthenticated user should not be able to delete feeds"))))
 
 ; TODO: write a lower-level test which directly calls load-filters on a new feed,
 ; because we can't really cleanly test for filters here without inspecting the
@@ -144,14 +154,14 @@
     )
 
 ; TODO: not very good for the reasons noted above ^^^
-;(deftest feed-has-default-filters-markup
-;  "Makes sure that a newly-added feed is created with default filters"
-;  (with-local-user-and-data
-;    ; Mock out syndFeed
-;    (expect [get-syndfeed (returns mockSyndFeed) 
-;             get-rss (returns "mock RSS feed")] 
-;      (request "/feeds" :method :post :params {"feed_url" "http://bogus.url"})
-;      (let [id (key->string (:key (first (find-pillagefeeds))))
-;            pillaged-url (str "/feeds/" id ".rss")]
-;        (assert-status 200 (request pillaged-url))))))
+(deftest feed-has-default-filters-markup
+  "Makes sure that a newly-added feed is created with default filters"
+  (with-local-user-and-data
+    ; Mock out syndFeed
+    (expect [get-syndfeed (returns mockSyndFeed) 
+             get-rss (returns "mock RSS feed")] 
+      (request "/feeds" :method :post :params {"feed_url" "http://bogus.url"})
+      (let [id (key->string (:key (first (find-pillagefeeds))))
+            pillaged-url (str "/feeds/" id ".rss")]
+        (assert-status 200 (request pillaged-url))))))
 

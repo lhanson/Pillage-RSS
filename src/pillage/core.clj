@@ -19,9 +19,11 @@
     (handlers/add-feed uri feed_url))
 
   (GET ["/feeds/:id"] {{id "id"} :params :as request}
-    (handlers/edit-feed (:uri request) id))
-  (GET ["/feeds/:id.rss"] {{id "id"} :params :as request}
-    (handlers/get-feed (:uri request) id))
+    (handlers/edit-feed (:uri request) id));)
+  (GET ["/feeds/:id/rss"] {{id "id"} :params :as request}
+    (do (println "Getting feed as .rss")
+    ;(handlers/edit-feed (:uri request) id)))
+    (handlers/get-feed (:uri request) id)))
   (DELETE ["/feeds/:id"] {{id "id"} :params :as request}
     (handlers/delete-feed (:uri request) id))
   (POST "/feeds/:id" {uri :uri form-params :form-params {id "id"} :params}

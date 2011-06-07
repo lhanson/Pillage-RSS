@@ -26,10 +26,10 @@
 
 (defn- display-filter [afilter]
   (println "Displaying" afilter)
-  `([:h3 "Label:" ~(:label afilter)]
-    [:p "Author:" ~(:author afilter)]
-    [:p "Type:" ~(:type afilter)]
-    [:p "Regex:" ~(:regex filter)]))
+  `([:h3 "Label: " ~(:label afilter)]
+    [:p "Author: " ~(:author afilter)]
+    [:p "Type: " ~(:type afilter)]
+    [:p "Regex: " ~(:regex filter)]))
 
 (defn- printfeed [{:keys [key, feed-name, user-id]}]
   (println "Feed key:" (key->string key) ", title:" feed-name ", user id:" user-id))

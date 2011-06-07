@@ -46,11 +46,15 @@
     ))
 
 (defn- load-feed [userid feed-id]
-  "Returns the user's specified feed"
+  "Returns the user's specified feed. If nil is passed as userid, we bypass that
+   constraint."
   (try
+    (println "Loading feed...")
     (if-let [feed (get-entity (string->key feed-id))]
-      (if (= userid (get (.getProperties feed) "user-id"))
-        (load-filters (deserialize-entity feed))))
+      (do
+        (println "Checking userid" userid)
+      (if (or (nil? userid) (= userid (get (.getProperties feed) "user-id")))
+        (load-filters (deserialize-entity feed)))))
     (catch Exception e
       (println "Error loading feed" feed-id "for user" userid ": " e))))
 
@@ -120,16 +124,15 @@
 (defn get-feed [uri id]
   "Returns the pillaged version of the RSS feed"
   ; TODO: this should not require the user to be logged in
-  (let [nickname (:nickname (current-user))]
-    (if-let [feed (load-feed nickname id)]
-      (if-let [filters (load-filters feed)]
-        (let [syndfeed (get-syndfeed (:original-url feed))]
-          (println "Loading RSS for" feed)
-          (println "Syndfeed:" syndfeed)
-          (println "RSS:" (get-rss syndfeed))
-          {:headers {"Content-Type" "text/xml"}
-           :body (get-rss syndfeed)})
-        (println "Error loading filters for feed" id))
-      (println "Error loading feed" id))))
-      ; TODO: redirect to a 404
+  (if-let [feed (load-feed nil id)]
+    (if-let [filters (load-filters feed)]
+      (let [syndfeed (get-syndfeed (:original-url feed))]
+        (println "Loading RSS for" feed)
+        (println "Syndfeed:" syndfeed)
+        (println "RSS:" (get-rss syndfeed))
+        {:headers {"Content-Type" "text/xml"}
+         :body (get-rss syndfeed)})
+      (println "Error loading filters for feed" id))
+    (println "Error loading feed" id)))
+    ; TODO: redirect to a 404
 
